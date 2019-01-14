@@ -1,0 +1,91 @@
+{% extends 'layout.html' %}
+{% block head %}
+<!-- Required meta tags -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link href="{{ url_for('static', filename='css/cover.css') }}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Anton|Bree+Serif|Bungee+Inline|ZCOOL+KuaiLe" rel="stylesheet"> 
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" type="text/css" rel="stylesheet">
+<script src="https://use.fontawesome.com/49b98aaeb5.js"></script>
+{% endblock %}
+{% block body %}
+<iframe id="music" width="0" height="0" src="" frameborder="0" allowfullscreen></iframe>
+<style type="text/css">
+	::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */
+}
+</style>
+<div class="container">
+	<div class="well text-center">
+		<h1 style="font-family: 'ZCOOL KuaiLe', cursive;">Metabase<button style="margin-left: 10px;" class="btn btn-danger" id='exitbutton' >Exit <i class="fa fa-window-close" aria-hidden="true" style="color:#fff;"></i></button></h1>
+	</div>
+	<div id="scroll" class="row" style="overflow-y: scroll; height: 70%; ">
+		<div class="col-sm-12" id='chatbox'>
+			
+			<div class="msg-wrapper" id="msg-wrapper">
+				<div id="wrapper" class="chat">
+					
+				</div>	
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-12" style="bottom: 15px; width: 100%; position: fixed;">
+			<form action="" method="POST" id="messagebox">
+				<input style="width: 60%;" type="text" autocomplete="off" name="messagebox" id="message_input" placeholder="Enter Your message "><button style="margin-left: 10px; font-family: 'ZCOOL KuaiLe', cursive;" class="btn btn-success" type="submit" value="submit" >Send <i class="fa fa-telegram" aria-hidden="true" style="color:#fff;"></i></button>
+			</form>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	var socket = io.connect(`{{ location }}`)
+	var username = "{{ username }}"
+	
+
+	socket.on('new_user', function(msg){
+		$('.chat').append(`<h6 style="font-family: 'Bungee Inline', cursive; font-size: 13px; text-align: center; color: #91ff35;">`+ msg.message +` is online </h6><br><hr>`)
+		
+
+	})
+	socket.on('exit_user', function(msg){
+		$('.chat').append(`<h6 style="font-family: 'Bungee Inline', cursive; font-size: 13px; text-align: center; color: #ff1744;">`+ msg.message +` is offline </h6><br><hr>`)
+		
+	})
+
+	var form = $( '#messagebox').on('submit', function(e) {
+		e.preventDefault()
+		
+		var message = $('#message_input').val()
+		$('#message_input').val('')
+		// broadcast 
+		var data = {username: username, message: message};
+		socket.emit('message', data)
+		})
+
+		
+	// capture
+	socket.on('changemusic', function (mid) {
+		$('#music').attr('src', mid.message);
+	})
+	socket.on('message_action', function(msg){
+		
+		if (username == msg.username){
+			$('.chat').append(`<br><h6 style="font-family: 'Bungee Inline', cursive; font-size: 10px; text-align: right; color: #91ff35;">Me<br><div class="bubble you" style="font-family: 'Bree Serif', serif; font-size: 16px; color: #000;">`+ msg.message +`</div><br><hr>`)
+		}
+		else{
+			$('.chat').append(`<br><h6 style="font-family: 'Bungee Inline', cursive; font-size: 10px; text-align: left; color: #91ff35;">`+ msg.username +`<br><div class="bubble me" style="font-family: 'Bree Serif', serif; font-size: 16px; color: #000;">`+ msg.message +`</div><br><hr>`)
+		}
+		var objDiv = document.getElementById("scroll");
+		objDiv.scrollTop = objDiv.scrollHeight;
+	})
+	$('#exitbutton').on('click', function(){
+		msg = {'message' : username}
+		socket.emit('user_exit', msg)
+		window.location.href = "{{ url_for('logout') }}";
+
+	})
+</script>
+{% endblock %}
